@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mums HQ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;1,9..144,600&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --paper:#FBF5F3; --ink:#3A2B35; --muted:#8A7684; --line:#E9DCE0;
+    --rasp:#B64A74; --rasp-soft:#F6E1EA; --mint:#4F9684; --mint-soft:#DDEFE8;
+    --butter:#F4D77C; --butter-soft:#FBF1CE; --plum:#6C4E8A; --plum-soft:#E9E0F2;
+    --card:#FFFFFF; --font-body:'Nunito',system-ui,sans-serif; --font-head:'Fraunces',Georgia,serif;
+  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  header{padding:calc(16px + env(safe-area-inset-top,0px)) 20px 8px;max-width:760px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+  h1{font-family:var(--font-head);font-weight:600;font-size:34px;margin:0;line-height:1;letter-spacing:-.01em}
+  h1 span{display:block;font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--muted);letter-spacing:0;margin-top:6px}
+  .who{font-size:13px;color:var(--muted);text-align:right}
+  .who button{background:none;border:0;color:var(--rasp);font:inherit;font-weight:700;cursor:pointer;padding:0}
+  main{max-width:760px;margin:0 auto;padding:8px 16px 24px}
+  .view{display:none} .view.active{display:block}
+  .intro{color:var(--muted);font-size:14px;margin:4px 0 14px}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
+  .chip{border:1.5px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+  .chip.on{border-color:var(--ink);color:var(--ink)}
+  .btn{background:var(--rasp);color:#fff;border:0;border-radius:12px;padding:10px 16px;font:inherit;font-weight:700;cursor:pointer}
+  .btn.ghost{background:var(--card);color:var(--ink);border:1.5px solid var(--line)}
+  .btn.small{padding:6px 12px;font-size:13px;border-radius:9px}
+  .btn:focus-visible,.chip:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--butter);outline-offset:2px}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px 12px 16px;position:relative;cursor:pointer}
+  .item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:0 5px 5px 0;background:var(--line)}
+  .item.mum::before{background:var(--rasp)} .item.dad::before{background:var(--mint)} .item.relationship::before{background:var(--plum)} .item.general::before{background:var(--butter)}
+  .item.done{opacity:.55} .item.done .t{text-decoration:line-through}
+  .t{font-weight:700;margin:0 0 2px}
+  .m{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+  .m b{color:var(--ink);font-weight:600}
+  .tag{display:inline-block;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700}
+  .tag.todo{background:var(--butter-soft)} .tag.doing{background:var(--plum-soft)} .tag.done{background:var(--mint-soft)}
+  .tag.idea{background:var(--butter-soft)} .tag.drafting{background:var(--plum-soft)} .tag.ready{background:var(--rasp-soft)} .tag.posted{background:var(--mint-soft)}
+  .tag.new{background:var(--butter-soft)} .tag.keep{background:var(--mint-soft)} .tag.parked{background:var(--line)}
+  .tag.late{background:var(--rasp);color:#fff}
+  .ask{background:var(--rasp-soft);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:700;color:var(--rasp)}
+  .empty{text-align:center;color:var(--muted);padding:36px 16px;border:1.5px dashed var(--line);border-radius:14px}
+  nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
+  nav button{flex:1;background:none;border:0;font:inherit;font-size:12px;font-weight:700;color:var(--muted);padding:6px 2px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+  nav button .ic{font-size:20px;line-height:1} nav button.on{color:var(--rasp);background:var(--rasp-soft)}
+  @media(min-width:700px){nav{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line);max-width:760px;margin:0 auto;border-radius:0 0 14px 14px} body{padding-bottom:24px} nav button{flex-direction:row;font-size:14px}}
+  dialog{border:0;border-radius:18px 18px 0 0;padding:0;width:100%;max-width:560px;margin:auto 0 0;background:var(--card);color:var(--ink);max-height:92vh}
+  @media(min-width:600px){dialog{border-radius:18px;margin:auto}}
+  dialog::backdrop{background:rgba(58,43,53,.45)}
+  form.sheet{padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:12px;overflow:auto;max-height:92vh}
+  form.sheet h2{font-family:var(--font-head);font-weight:600;font-size:24px;margin:0 0 4px}
+  label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;color:var(--muted)}
+  input,textarea,select{font:inherit;font-size:16px;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);color:var(--ink);width:100%}
+  textarea{min-height:84px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .actions{display:flex;gap:8px;justify-content:space-between;align-items:center;margin-top:4px}
+  .danger{background:none;border:0;color:var(--muted);font:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  .login{max-width:420px;margin:40px auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 22px;text-align:center}
+  .login h2{font-family:var(--font-head);font-weight:600;font-size:26px;margin:0 0 6px}
+  .login p{color:var(--muted);font-size:14px;margin:0 0 18px}
+  .login form{display:flex;flex-direction:column;gap:10px}
+  .note{background:var(--butter-soft);border-radius:12px;padding:12px 14px;font-size:14px;margin:0 0 14px}
+  .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  .help{font-size:12px;color:var(--muted);font-weight:400}
+  @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Mums HQ<span>Our shared plan: actions, ideas, posts</span></h1>
+  <div class="who" id="who"></div>
+</header>
+
+<nav id="nav" hidden>
+  <button data-view="actions"><span class="ic">✓</span>Actions</button>
+  <button data-view="people"><span class="ic">♡</span>Mum &amp; Dad</button>
+  <button data-view="ideas"><span class="ic">✦</span>Ideas</button>
+  <button data-view="posts"><span class="ic">▣</span>Posts</button>
+</nav>
+
+<main>
+  <div id="setup" class="note" hidden>
+    This page needs its Supabase address and key. Open index.html, find <b>SUPABASE_URL</b> and <b>SUPABASE_KEY</b> near the bottom, and paste them in.
+  </div>
+
+  <section id="login" class="login" hidden>
+    <h2>Sign in</h2>
+    <p>Type your email and we’ll send you a link. No password needed.</p>
+    <form id="loginForm">
+      <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
+      <button class="btn" type="submit">Email me a link</button>
+    </form>
+    <p id="loginMsg" style="margin-top:14px"></p>
+  </section>
+
+  <section id="blocked" class="login" hidden>
+    <h2>Not on the list yet</h2>
+    <p>Your email is signed in but isn’t in the team list. Ask Akvile to add it in Supabase (allowed_emails), then refresh.</p>
+    <button class="btn ghost" onclick="signOut()">Sign out</button>
+  </section>
+
+  <section class="view" id="view-actions">
+    <p class="intro">Things to do, who’s on it, and by when. Tap one to edit.</p>
+    <div class="toolbar">
+      <button class="btn" onclick="openForm('action')">Add action</button>
+      <button class="chip on" data-filter="open">Open</button>
+      <button class="chip" data-filter="mine">Needs my input</button>
+      <button class="chip" data-filter="done">Done</button>
+      <button class="chip" data-filter="all">All</button>
+    </div>
+    <div class="list" id="list-actions"></div>
+  </section>
+
+  <section class="view" id="view-people">
+    <p class="intro">So we never forget who we’re helping. Everything tagged Mum, Dad or Relationship, in one place.</p>
+    <div class="toolbar">
+      <button class="chip on" data-area="mum">Mum</button>
+      <button class="chip" data-area="dad">Dad</button>
+      <button class="chip" data-area="relationship">Relationship</button>
+    </div>
+    <div class="list" id="list-people"></div>
+    <p class="help" style="margin-top:14px">Tip: add an idea or action and set its area to Mum, Dad or Relationship, and it shows up here.</p>
+  </section>
+
+  <section class="view" id="view-ideas">
+    <p class="intro">Every idea we have, big or small, with notes. Nothing is a bad idea here.</p>
+    <div class="toolbar">
+      <button class="btn" onclick="openForm('idea')">Add idea</button>
+      <button class="chip on" data-istatus="all">All</button>
+      <button class="chip" data-istatus="new">New</button>
+      <button class="chip" data-istatus="keep">Keep</button>
+      <button class="chip" data-istatus="parked">Parked</button>
+    </div>
+    <div class="list" id="list-ideas"></div>
+  </section>
+
+  <section class="view" id="view-posts">
+    <p class="intro">Our Instagram plan. Each post: the hook, what’s in it, the format, and where it’s up to.</p>
+    <div class="toolbar">
+      <button class="btn" onclick="openForm('post')">Add post</button>
+      <button class="btn ghost" id="seedBtn" onclick="seed()" hidden>Add starter list</button>
+      <button class="chip on" data-pstatus="all">All</button>
+      <button class="chip" data-pstatus="idea">Idea</button>
+      <button class="chip" data-pstatus="drafting">Drafting</button>
+      <button class="chip" data-pstatus="ready">Ready</button>
+      <button class="chip" data-pstatus="posted">Posted</button>
+    </div>
+    <div class="list" id="list-posts"></div>
+  </section>
+</main>
+
+<dialog id="dlg">
+  <form class="sheet" id="form" method="dialog">
+    <h2 id="formTitle">Add</h2>
+    <input type="hidden" id="f-id"><input type="hidden" id="f-kind">
+    <label>Title<input id="f-title" required></label>
+    <div class="row">
+      <label>Area<select id="f-area">
+        <option value="general">General</option><option value="mum">Mum</option><option value="dad">Dad</option><option value="relationship">Relationship</option>
+      </select></label>
+      <label>Status<select id="f-status"></select></label>
+    </div>
+    <div class="row" id="actionFields">
+      <label>Who’s on it<input id="f-owner" placeholder="Nerys"></label>
+      <label>Due<input type="date" id="f-due"></label>
+    </div>
+    <label id="inputField">Needs input from<input id="f-needs" placeholder="Zain, Rhys…"><span class="help">Leave blank if nobody else is needed.</span></label>
+    <div id="postFields" style="display:flex;flex-direction:column;gap:12px">
+      <label>Hook (the first line people read)<input id="f-hook" placeholder="Is this poo colour normal?"></label>
+      <label>What’s included<textarea id="f-includes" placeholder="Colour chart, what’s normal, when to call"></textarea></label>
+      <label>Format<select id="f-format">
+        <option value="">Choose</option><option>Carousel</option><option>Single image</option><option>Reel</option><option>Story</option><option>Printable</option>
+      </select></label>
+    </div>
+    <label>Notes<textarea id="f-notes"></textarea></label>
+    <div class="actions">
+      <button type="button" class="danger" id="deleteBtn" onclick="removeItem()">Delete</button>
+      <span>
+        <button type="button" class="btn ghost" onclick="dlg.close()">Cancel</button>
+        <button type="submit" class="btn">Save</button>
+      </span>
+    </div>
+  </form>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- Paste your Supabase details here (Project settings > API) ----
+const SUPABASE_URL = "PASTE_YOUR_PROJECT_URL";
+const SUPABASE_KEY = "PASTE_YOUR_PUBLISHABLE_OR_ANON_KEY";
+// -------------------------------------------------------------------
+
+const STATUSES = {
+  action:[["todo","To do"],["doing","Doing"],["done","Done"]],
+  idea:[["new","New"],["keep","Keep"],["parked","Parked"]],
+  post:[["idea","Idea"],["drafting","Drafting"],["ready","Ready"],["posted","Posted"]]
+};
+const AREA = {mum:"Mum",dad:"Dad",relationship:"Relationship",general:"General"};
+let sb=null, me=null, items=[], view="actions";
+let filt={actions:"open",area:"mum",idea:"all",post:"all"};
+const $=s=>document.querySelector(s);
+
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2200)}
+
+async function init(){
+  if(!SUPABASE_URL.startsWith("http")){$("#setup").hidden=false;return}
+  sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+  const {data:{session}}=await sb.auth.getSession();
+  sb.auth.onAuthStateChange((_e,s)=>{ if(!!s!==!!me){ me=s?s.user:null; gate(); } });
+  me=session?session.user:null; gate();
+  document.addEventListener("visibilitychange",()=>{if(!document.hidden&&me)load()});
+}
+async function gate(){
+  const ok=!!me;
+  $("#login").hidden=ok; $("#nav").hidden=!ok; $("#blocked").hidden=true;
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",ok&&v.id==="view-"+view));
+  $("#who").innerHTML=ok?`${me.email}<br><button onclick="signOut()">Sign out</button>`:"";
+  if(ok){
+    const {data}=await sb.from("allowed_emails").select("email").limit(1);
+    if(!data||!data.length){$("#blocked").hidden=false;document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$("#nav").hidden=true;return}
+    load();
+  }
+}
+$("#loginForm").onsubmit=async e=>{
+  e.preventDefault();
+  const email=$("#email").value.trim();
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split("#")[0]}});
+  $("#loginMsg").textContent=error?("Couldn’t send the link: "+error.message):"Check your inbox and tap the link. Then come back here.";
+};
+async function signOut(){await sb.auth.signOut();me=null;gate()}
+
+async function load(){
+  const {data,error}=await sb.from("items").select("*").order("created_at",{ascending:true});
+  if(error){toast("Couldn’t load: "+error.message);return}
+  items=data||[]; render();
+}
+function fmtDate(d){if(!d)return"";const x=new Date(d+"T00:00");return x.toLocaleDateString("en-GB",{day:"numeric",month:"short"})}
+function isLate(it){return it.kind==="action"&&it.status!=="done"&&it.due_date&&it.due_date<new Date().toISOString().slice(0,10)}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function label(kind,st){const f=STATUSES[kind].find(x=>x[0]===st);return f?f[1]:st}
+function card(it){
+  const bits=[];
+  bits.push(`<span class="tag ${it.status}">${label(it.kind,it.status)}</span>`);
+  if(it.kind!=="action"||it.area!=="general") bits.push(`<span>${AREA[it.area]||it.area}</span>`);
+  if(it.owner) bits.push(`<span><b>${esc(it.owner)}</b></span>`);
+  if(it.due_date) bits.push(`<span class="${isLate(it)?"tag late":""}">${isLate(it)?"Late · ":""}${fmtDate(it.due_date)}</span>`);
+  if(it.needs_input) bits.push(`<span class="ask">Needs ${esc(it.needs_input)}</span>`);
+  if(it.kind==="post"&&it.format) bits.push(`<span>${esc(it.format)}</span>`);
+  const sub=it.kind==="post"&&it.hook?`<div class="help" style="margin:2px 0 4px">“${esc(it.hook)}”</div>`:"";
+  return `<div class="item ${it.area} ${it.status==="done"?"done":""}" onclick="openForm('${it.kind}','${it.id}')" tabindex="0" onkeydown="if(event.key==='Enter')this.click()">
+    <p class="t">${esc(it.title)}</p>${sub}<div class="m">${bits.join("")}</div></div>`;
+}
+function fill(id,list,emptyText){const el=$(id);el.innerHTML=list.length?list.map(card).join(""):`<div class="empty">${emptyText}</div>`}
+function render(){
+  const mineKey=(me&&me.email||"").split("@")[0].toLowerCase();
+  const a=items.filter(i=>i.kind==="action").filter(i=>
+    filt.actions==="all"?true:filt.actions==="done"?i.status==="done":filt.actions==="mine"?(i.needs_input||"").toLowerCase().includes(mineKey)&&i.status!=="done":i.status!=="done")
+    .sort((x,y)=>(x.due_date||"9")>(y.due_date||"9")?1:-1);
+  fill("#list-actions",a,"Nothing here. Add an action to get the ball rolling.");
+  fill("#list-people",items.filter(i=>i.area===filt.area),`Nothing tagged ${AREA[filt.area]} yet.`);
+  fill("#list-ideas",items.filter(i=>i.kind==="idea"&&(filt.idea==="all"||i.status===filt.idea)),"No ideas yet. Add the first one.");
+  const p=items.filter(i=>i.kind==="post"&&(filt.post==="all"||i.status===filt.post));
+  fill("#list-posts",p,"No posts planned yet. Add one, or add the starter list.");
+  $("#seedBtn").hidden=items.some(i=>i.kind==="post");
+}
+
+// navigation + filters
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{view=b.dataset.view;document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x===b));document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+view))});
+document.querySelector("nav button").classList.add("on");
+document.querySelectorAll(".chip").forEach(c=>c.onclick=()=>{
+  const k=Object.keys(c.dataset)[0]; const map={filter:"actions",area:"area",istatus:"idea",pstatus:"post"};
+  filt[map[k]]=c.dataset[k]; c.parentElement.querySelectorAll(".chip").forEach(x=>x.classList.toggle("on",x===c)); render();
+});
+
+// form
+const dlg=$("#dlg");
+function openForm(kind,id){
+  const it=id?items.find(x=>x.id===id):null;
+  $("#f-id").value=id||""; $("#f-kind").value=kind;
+  $("#formTitle").textContent=(it?"Edit ":"Add ")+kind;
+  $("#f-status").innerHTML=STATUSES[kind].map(([v,l])=>`<option value="${v}">${l}</option>`).join("");
+  $("#f-title").value=it?it.title:""; $("#f-area").value=it?it.area:(view==="people"?filt.area:"general");
+  $("#f-status").value=it?it.status:STATUSES[kind][0][0];
+  $("#f-owner").value=it?it.owner||"":""; $("#f-due").value=it?it.due_date||"":"";
+  $("#f-needs").value=it?it.needs_input||"":""; $("#f-notes").value=it?it.notes||"":"";
+  $("#f-hook").value=it?it.hook||"":""; $("#f-includes").value=it?it.includes||"":""; $("#f-format").value=it?it.format||"":"";
+  $("#actionFields").style.display=kind==="action"?"grid":"none";
+  $("#inputField").style.display=kind==="idea"?"none":"flex";
+  $("#postFields").style.display=kind==="post"?"flex":"none";
+  $("#deleteBtn").style.visibility=it?"visible":"hidden";
+  dlg.showModal(); $("#f-title").focus();
+}
+$("#form").onsubmit=async e=>{
+  e.preventDefault();
+  const id=$("#f-id").value, kind=$("#f-kind").value;
+  const row={kind,title:$("#f-title").value.trim(),area:$("#f-area").value,status:$("#f-status").value,
+    owner:$("#f-owner").value.trim(),due_date:$("#f-due").value||null,needs_input:$("#f-needs").value.trim(),
+    notes:$("#f-notes").value.trim(),hook:$("#f-hook").value.trim(),includes:$("#f-includes").value.trim(),format:$("#f-format").value,
+    updated_at:new Date().toISOString()};
+  if(!row.title)return;
+  let res;
+  if(id) res=await sb.from("items").update(row).eq("id",id);
+  else res=await sb.from("items").insert({...row,created_by:me.email});
+  if(res.error){toast("Couldn’t save: "+res.error.message);return}
+  dlg.close(); toast(id?"Saved":"Added"); load();
+};
+async function removeItem(){
+  const id=$("#f-id").value; if(!id||!confirm("Delete this? It can’t be undone."))return;
+  const {error}=await sb.from("items").delete().eq("id",id);
+  if(error){toast("Couldn’t delete: "+error.message);return}
+  dlg.close(); toast("Deleted"); load();
+}
+
+// starter Instagram list
+async function seed(){
+  const posts=[
+    ["Where to get help (and it’s okay to ask)","You don’t have to do this alone","GP, health visitor, 111, perinatal mental health team, PANDAS, Mind. When to use which.","Carousel","mum"],
+    ["Is this poo colour normal?","Green? Black? Seedy? Here’s what it means","Colour chart, what’s normal by age, when to call someone.","Carousel","general"],
+    ["Postnatal bleeding: what to expect","Still bleeding at week 3? Probably normal","Weeks 1 to 6 timeline, what’s too much, when to call.","Carousel","mum"],
+    ["Why your hair is falling out","It’s not just you","What causes it, when it stops, what helps.","Single image","mum"],
+    ["Fever in babies: when to worry","Under 3 months with a temperature? Call","Temperatures by age, red flags, 111 vs A&E.","Carousel","general"],
+    ["How to ask for help: 5 scripts","Copy and paste these","Ready-made messages for partners, family, friends.","Carousel","relationship"],
+    ["Dads matter too","Partners get low after a baby as well","Signs to watch, where dads can get support.","Carousel","dad"],
+    ["Your relationship after a baby","Nobody warned us about this bit","Common strains, small habits that help, where to get support.","Carousel","relationship"],
+    ["Mum-buster: ‘Good mums enjoy every moment’","Nope","Reality-check one guilt-trip myth each week.","Reel","mum"],
+    ["Still you: 10 minutes that are yours","You are a mum. You are still you","Tiny ways to get a bit of yourself back.","Single image","mum"],
+    ["Matrescence: becoming a mother changes your brain","It’s a real thing with a real name","What changes, why you push people away, why it’s normal.","Carousel","mum"],
+    ["Free dental care while pregnant and after","Yes, really, use it","Why teeth are more fragile, how to claim it.","Single image","mum"]
+  ];
+  const rows=posts.map(([title,hook,includes,format,area])=>({kind:"post",title,hook,includes,format,area,status:"idea",created_by:me.email}));
+  const {error}=await sb.from("items").insert(rows);
+  if(error){toast("Couldn’t add: "+error.message);return}
+  toast("Starter list added"); load();
+}
+init();
+</script>
+</body>
+</html>
