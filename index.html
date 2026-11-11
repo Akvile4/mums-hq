@@ -127,12 +127,15 @@
 
   <section id="login" class="login" hidden>
     <h2>Sign in</h2>
-    <p>Type your email and we’ll send you a link. No password needed.</p>
+    <p>Use your email and password. First time here? Type them in and tap <b>Create account</b>.</p>
     <form id="loginForm">
       <input type="email" id="email" placeholder="you@example.com" required autocomplete="email">
-      <button class="btn" type="submit">Email me a link</button>
+      <input type="password" id="password" placeholder="Password (at least 6 characters)" required minlength="6" autocomplete="current-password">
+      <button class="btn" type="submit">Sign in</button>
+      <button class="btn ghost" type="button" onclick="signUp()">Create account</button>
     </form>
     <p id="loginMsg" style="margin-top:14px"></p>
+    <p style="margin:0"><button class="danger" type="button" onclick="sendLink()">Forgot password? Email me a sign-in link instead</button></p>
   </section>
 
   <section id="blocked" class="login" hidden>
@@ -280,19 +283,52 @@ async function gate(){
   const ok=!!me;
   $("#login").hidden=ok; $("#nav").hidden=!ok; $("#blocked").hidden=true;
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",ok&&v.id==="view-"+view));
-  $("#who").innerHTML=ok?`${me.email}<br><button onclick="signOut()">Sign out</button>`:"";
+  $("#who").innerHTML=ok?`${esc(me.email)}<br><button onclick="setPassword()">Set password</button> · <button onclick="signOut()">Sign out</button>`:"";
   if(ok){
     const {data}=await sb.from("allowed_emails").select("email").limit(1);
     if(!data||!data.length){$("#blocked").hidden=false;document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$("#nav").hidden=true;return}
     load();
   }
 }
+function loginMsg(t){$("#loginMsg").textContent=t}
+function creds(){
+  const email=$("#email").value.trim(), password=$("#password").value;
+  if(!email){loginMsg("Type your email first.");return null}
+  if(password.length<6){loginMsg("Password needs at least 6 characters.");return null}
+  return {email,password};
+}
 $("#loginForm").onsubmit=async e=>{
   e.preventDefault();
-  const email=$("#email").value.trim();
-  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split("#")[0]}});
-  $("#loginMsg").textContent=error?("Couldn’t send the link: "+error.message):"Check your inbox and tap the link. Then come back here.";
+  const c=creds(); if(!c)return;
+  loginMsg("Signing in…");
+  const {error}=await sb.auth.signInWithPassword(c);
+  if(!error){loginMsg("");return}
+  loginMsg(/invalid login/i.test(error.message)
+    ?"Wrong email or password. First time here? Tap Create account. Used a sign-in link before? Tap the link option below once, then use Set password."
+    :/not confirmed/i.test(error.message)?"Your account isn’t confirmed yet. Ask Akvile to turn off email confirmation in Supabase."
+    :"Couldn’t sign in: "+error.message);
 };
+async function signUp(){
+  const c=creds(); if(!c)return;
+  loginMsg("Creating your account…");
+  const {data,error}=await sb.auth.signUp(c);
+  if(error){loginMsg(/already registered/i.test(error.message)?"This email already has an account. Tap Sign in instead.":"Couldn’t create account: "+error.message);return}
+  if(!data.session) loginMsg("Account created, but Supabase wants an email confirmation first. Ask Akvile to turn off ‘Confirm email’ in Supabase.");
+  else loginMsg("");
+}
+async function sendLink(){
+  const email=$("#email").value.trim();
+  if(!email){loginMsg("Type your email first, then tap the link option.");return}
+  const {error}=await sb.auth.signInWithOtp({email,options:{emailRedirectTo:location.href.split("#")[0]}});
+  loginMsg(error?("Couldn’t send the link: "+error.message):"Check your inbox and tap the link. Once you’re in, tap Set password at the top.");
+}
+async function setPassword(){
+  const p=prompt("Choose a password (at least 6 characters):");
+  if(p===null)return;
+  if(p.length<6){toast("Password needs at least 6 characters");return}
+  const {error}=await sb.auth.updateUser({password:p});
+  toast(error?"Couldn’t set password: "+error.message:"Password set. Next time just sign in with it.");
+}
 async function signOut(){await sb.auth.signOut();me=null;gate()}
 
 async function load(){
