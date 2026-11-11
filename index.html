@@ -14,14 +14,14 @@
     --butter:#F4D77C; --butter-soft:#FBF1CE; --plum:#6C4E8A; --plum-soft:#E9E0F2;
     --card:#FFFFFF; --font-body:'Nunito',system-ui,sans-serif; --font-head:'Fraunces',Georgia,serif;
   }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45}
   header{padding:calc(16px + env(safe-area-inset-top,0px)) 20px 8px;max-width:760px;margin:0 auto;display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
   h1{font-family:var(--font-head);font-weight:600;font-size:34px;margin:0;line-height:1;letter-spacing:-.01em}
   h1 span{display:block;font-family:var(--font-body);font-weight:600;font-size:13px;color:var(--muted);letter-spacing:0;margin-top:6px}
   .who{font-size:13px;color:var(--muted);text-align:right}
   .who button{background:none;border:0;color:var(--rasp);font:inherit;font-weight:700;cursor:pointer;padding:0}
-  main{max-width:760px;margin:0 auto;padding:8px 16px 24px}
+  main{max-width:760px;margin:0 auto;padding:8px 16px calc(110px + env(safe-area-inset-bottom,0px))}
   .view{display:none} .view.active{display:block}
   .intro{color:var(--muted);font-size:14px;margin:4px 0 14px}
   .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px;align-items:center}
@@ -53,7 +53,7 @@
   nav{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));z-index:5}
   nav button{flex:1;background:none;border:0;font:inherit;font-size:12px;font-weight:700;color:var(--muted);padding:6px 2px;border-radius:10px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
   nav button .ic{font-size:20px;line-height:1} nav button.on{color:var(--rasp);background:var(--rasp-soft)}
-  @media(min-width:700px){nav{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line);max-width:760px;margin:0 auto;border-radius:0 0 14px 14px} body{padding-bottom:24px} nav button{flex-direction:row;font-size:14px}}
+  @media(min-width:700px){nav{position:sticky;top:0;bottom:auto;border-top:0;border-bottom:1px solid var(--line);max-width:760px;margin:0 auto;border-radius:0 0 14px 14px} main{padding-bottom:32px} nav button{flex-direction:row;font-size:14px}}
   dialog{border:0;border-radius:18px 18px 0 0;padding:0;width:100%;max-width:560px;margin:auto 0 0;background:var(--card);color:var(--ink);max-height:92vh}
   @media(min-width:600px){dialog{border-radius:18px;margin:auto}}
   dialog::backdrop{background:rgba(58,43,53,.45)}
@@ -73,7 +73,6 @@
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
   .toast.show{opacity:1}
   .help{font-size:12px;color:var(--muted);font-weight:400}
-  .starter{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
   /* money timeline */
   .moneyHead{background:linear-gradient(135deg,var(--butter-soft),var(--rasp-soft));border-radius:18px;padding:16px 18px;margin:0 0 18px}
   .moneyHead h2{font-family:var(--font-head);font-weight:600;font-size:24px;margin:0 0 4px}
@@ -143,10 +142,6 @@
   </section>
 
   <section class="view" id="view-actions">
-    <div class="note starter" id="starter" hidden>
-      <span>Add our ideas, first actions, Instagram posts and money plan. Everything can be edited or deleted afterwards.</span>
-      <button class="btn small" onclick="seedAll()">Add our starter plan</button>
-    </div>
     <p class="intro">Things to do, who’s on it, and by when. Tap one to edit.</p>
     <div class="toolbar">
       <button class="btn" onclick="openForm('action')">Add action</button>
@@ -186,7 +181,6 @@
     <p class="intro">Our Instagram plan. Each post: the hook, what’s in it, the format, and where it’s up to.</p>
     <div class="toolbar">
       <button class="btn" onclick="openForm('post')">Add post</button>
-      <button class="btn ghost" id="seedBtn" onclick="seedAll(['post'])" hidden>Add starter list</button>
       <button class="chip on" data-pstatus="all">All</button>
       <button class="chip" data-pstatus="idea">Idea</button>
       <button class="chip" data-pstatus="drafting">Drafting</button>
@@ -205,7 +199,6 @@
     </div>
     <div class="toolbar">
       <button class="btn" onclick="openForm('stage')">Add stage</button>
-      <button class="btn ghost" id="seedMoney" onclick="seedAll(['stage'])" hidden>Add our money plan</button>
     </div>
     <div class="path" id="list-money"></div>
     <div class="reality">
@@ -354,19 +347,16 @@ function render(){
   fill("#list-people",items.filter(i=>i.area===filt.area),`Nothing tagged ${AREA[filt.area]} yet.`);
   fill("#list-ideas",items.filter(i=>i.kind==="idea"&&(filt.idea==="all"||i.status===filt.idea)),"No ideas yet. Add the first one.");
   const p=items.filter(i=>i.kind==="post"&&(filt.post==="all"||i.status===filt.post));
-  fill("#list-posts",p,"No posts planned yet. Add one, or add the starter list.");
-  $("#seedBtn").hidden=items.some(i=>i.kind==="post");
+  fill("#list-posts",p,"No posts planned yet. Add the first one.");
   renderMoney();
-  $("#starter").hidden=missingKinds().length===0;
 }
 function renderMoney(){
   const st=items.filter(i=>i.kind==="stage");
-  $("#seedMoney").hidden=st.length>0;
   const done=st.filter(s=>s.status==="done").length, nowIdx=st.findIndex(s=>s.status==="now");
   const pct=st.length?Math.round(((done+(nowIdx>=0?0.5:0))/st.length)*100):0;
   $("#moneyBar").style.width=pct+"%";
   $("#moneyLbl").textContent=st.length?(nowIdx>=0?`Stage ${nowIdx+1} of ${st.length}: ${st[nowIdx].title}`:`${done} of ${st.length} stages done`):"";
-  if(!st.length){$("#list-money").innerHTML=`<div class="empty">No stages yet. Add our money plan to start.</div>`;return}
+  if(!st.length){$("#list-money").innerHTML=`<div class="empty">No stages yet. Add the first one.</div>`;return}
   $("#list-money").innerHTML=st.map((s,i)=>{
     const ex=(s.includes||"").split("\n").map(x=>x.trim()).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("");
     return `<div class="stage ${s.status}" onclick="openForm('stage','${s.id}')" tabindex="0" onkeydown="if(event.key==='Enter')this.click()">
@@ -440,78 +430,6 @@ async function removeItem(){
   dlg.close(); toast("Deleted"); load();
 }
 
-// ---------- Starter plan (only adds what's missing; all editable afterwards) ----------
-function missingKinds(){return ["action","idea","post","stage"].filter(k=>!items.some(i=>i.kind===k))}
-const STARTER={
-  action:[
-    {title:"Check NMC social media guidance",owner:"Nerys",due_date:"2026-11-25",notes:"Read the NMC guidance on social media and check the NHS contract for anything about public advice or side work.",area:"general"},
-    {title:"Look at what already exists",owner:"Akvile",due_date:"2026-11-25",notes:"Follow 10 similar accounts and apps. Note what they do well and what’s missing (dads, other languages, no-guilt tone).",area:"general"},
-    {title:"Pick a name",owner:"Zain",needs_input:"Akvile, Nerys",due_date:"2026-11-30",notes:"Check the Instagram handle and web address are free before deciding.",area:"general"},
-    {title:"Design one cheat-sheet template",owner:"Zain",needs_input:"Nerys",due_date:"2026-12-07",notes:"Colourful, readable on a phone, room for a ‘when to call’ box.",area:"general"},
-    {title:"Gather 5–10 test mums",owner:"Akvile",due_date:"2026-12-07",notes:"Friends with babies who see posts before they go out and say if they helped.",area:"mum"},
-    {title:"Set up the Instagram account",owner:"Akvile",needs_input:"Zain",due_date:"2026-12-14",notes:"After the name is chosen. Bio, profile picture, highlight covers.",area:"general"},
-    {title:"Make and post the first 3 cheat sheets",owner:"Nerys",needs_input:"Akvile, Zain",due_date:"2027-01-10",notes:"Start with: where to get help, poo colours, postnatal bleeding.",area:"general"},
-    {title:"Find out about setting up a CIC",owner:"Rhys",due_date:"2027-01-31",notes:"Costs, what’s needed, whether it helps with grants. No rush.",area:"general"},
-    {title:"Book our next meeting",owner:"Akvile",due_date:"2026-11-20",notes:"",area:"general"}
-  ],
-  idea:[
-    {title:"One app for every stage",area:"general",status:"keep",notes:"Free app that grows with baby: pregnancy log, contraction timer, first 3 months, milestones, teething, and a ‘my baby is 15 months, what now?’ quick look. Replaces the pile of paid apps. Later, once we have an audience."},
-    {title:"A cute mascot",area:"general",notes:"Friendly character for the cheat sheets and app. Animal, object or character? Name? Calm, funny or wise?"},
-    {title:"Lithuanian and Welsh content",area:"general",status:"keep",notes:"English mum content is crowded. Lithuanian for mums in the UK, and Welsh, are almost empty. A niche we can own quickly."},
-    {title:"Test mums group",area:"mum",notes:"5–10 mums who see every post first and say if it helped. Free feedback, and later our first reviews."},
-    {title:"‘Ask a midwife’ weekly story",area:"mum",notes:"Nerys answers one anonymous question a week. General guidance only, never advice for one person."},
-    {title:"Printable fridge sheet",area:"mum",notes:"Who to call, for what, with numbers. Mums stick it on the fridge and every visitor sees our name."},
-    {title:"Partner with places mums already go",area:"general",notes:"Baby classes, libraries, GP waiting rooms, health visitors. A good free leaflet gets handed out."},
-    {title:"Wins list",area:"general",notes:"Save every message from a mum who says it helped. Keeps us going and is gold for grant applications."},
-    {title:"Set up as a CIC",area:"general",status:"parked",notes:"Community Interest Company: cheap, keeps it separate from our own money, and funders prefer it."},
-    {title:"Dads’ corner",area:"dad",notes:"Partners get low too. Signs to watch, how to help, where dads get support."},
-    {title:"Relationship after baby",area:"relationship",notes:"Common strains, small habits that help, how to share the load."},
-    {title:"‘Still you’ series",area:"mum",notes:"Getting yourself back: time, hobbies, ambition. From Akvile’s own story."},
-    {title:"Mum-busters (anti-guilt)",area:"mum",notes:"Reality-check one ‘perfect mum’ myth a week. Message: you know your baby best, trust your gut."}
-  ],
-  post:[
-    {title:"Where to get help (and it’s okay to ask)",hook:"You don’t have to do this alone",includes:"GP, health visitor, 111, perinatal mental health team, PANDAS, Mind. When to use which.",format:"Carousel",area:"mum"},
-    {title:"Is this poo colour normal?",hook:"Green? Black? Seedy? Here’s what it means",includes:"Colour chart, what’s normal by age, when to call someone.",format:"Carousel",area:"general"},
-    {title:"Postnatal bleeding: what to expect",hook:"Still bleeding at week 3? Probably normal",includes:"Weeks 1 to 6 timeline, what’s too much, when to call.",format:"Carousel",area:"mum"},
-    {title:"Why your hair is falling out",hook:"It’s not just you",includes:"What causes it, when it stops, what helps.",format:"Single image",area:"mum"},
-    {title:"Fever in babies: when to worry",hook:"Under 3 months with a temperature? Call",includes:"Temperatures by age, red flags, 111 vs A&E.",format:"Carousel",area:"general"},
-    {title:"How to ask for help: 5 scripts",hook:"Copy and paste these",includes:"Ready-made messages for partners, family, friends.",format:"Carousel",area:"relationship"},
-    {title:"Dads matter too",hook:"Partners get low after a baby as well",includes:"Signs to watch, where dads can get support.",format:"Carousel",area:"dad"},
-    {title:"Your relationship after a baby",hook:"Nobody warned us about this bit",includes:"Common strains, small habits that help, where to get support.",format:"Carousel",area:"relationship"},
-    {title:"Mum-buster: ‘Good mums enjoy every moment’",hook:"Nope",includes:"Reality-check one guilt-trip myth each week.",format:"Reel",area:"mum"},
-    {title:"Still you: 10 minutes that are yours",hook:"You are a mum. You are still you",includes:"Tiny ways to get a bit of yourself back.",format:"Single image",area:"mum"},
-    {title:"Matrescence: becoming a mother changes you",hook:"It’s a real thing with a real name",includes:"What changes, why it feels so big, why it’s normal.",format:"Carousel",area:"mum"},
-    {title:"Free dental care while pregnant and after",hook:"Yes, really, use it",includes:"Why teeth need extra care, how to claim it.",format:"Single image",area:"mum"}
-  ],
-  stage:[
-    {title:"Build trust",format:"Months 1–6",status:"now",hook:"1,000 followers who save and share our posts",
-     includes:"Free cheat sheets on Instagram\nWeekly ‘Ask a midwife’ story\nPrintable fridge sheet\nTest mums give feedback",
-     notes:"Nerys’s NMC check comes first.\nPost regularly rather than perfectly.\nWatch which posts get saved: that’s what mums want."},
-    {title:"First small products",format:"Months 6–12",status:"later",hook:"Our first £100 made",
-     includes:"Printable cheat-sheet pack (£5–15)\nMini e-book\n‘Your first 12 weeks’ short course",
-     notes:"Only sell what followers keep asking for.\nDigital only: no stock, no shipping."},
-    {title:"Partners",format:"Year 1–2",status:"later",hook:"First paid partnership that fits our values",
-     includes:"Sponsored posts\nAffiliate links\nWorkshops with baby classes\nTalks for local groups",
-     notes:"Say no to anything that makes mums feel guilty.\nAlways label ads clearly.\nOne bad sponsor undoes years of trust."},
-    {title:"Grants and community",format:"Year 2+",status:"later",hook:"Our first grant",
-     includes:"National Lottery Community Fund\nCouncil perinatal grants (£5k–10k)\nSet up as a CIC\nRun peer support groups",
-     notes:"Keep the wins list: funders want proof we help.\nLived experience is exactly what funders look for."},
-    {title:"The app",format:"Year 2–3",status:"later",hook:"Free app with an optional paid extra",
-     includes:"Free: tracker and ‘quick look by age’\nPaid: courses, Ask a midwife, Lithuanian and Welsh packs",
-     notes:"Only build it once our audience asks for it.\nNerys checks every health fact."}
-  ]
-};
-async function seedAll(kinds){
-  kinds=(kinds||missingKinds()).filter(k=>!items.some(i=>i.kind===k));
-  if(!kinds.length){toast("Already added");return}
-  const base=Date.now(); let n=0;
-  const defaults={action:"todo",idea:"new",post:"idea",stage:"later"};
-  const rows=[];
-  kinds.forEach(k=>STARTER[k].forEach(r=>rows.push({kind:k,status:defaults[k],area:"general",...r,created_by:me.email,created_at:new Date(base+(n++)*1000).toISOString()})));
-  const {error}=await sb.from("items").insert(rows);
-  if(error){toast("Couldn’t add: "+error.message);return}
-  toast("Starter plan added"); load();
-}
 init();
 </script>
 </body>
