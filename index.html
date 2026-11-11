@@ -35,6 +35,10 @@
   .item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px 12px 16px;position:relative;cursor:pointer}
   .item::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:5px;border-radius:0 5px 5px 0;background:var(--line)}
   .item.mum::before{background:var(--rasp)} .item.dad::before{background:var(--mint)} .item.relationship::before{background:var(--plum)} .item.general::before{background:var(--butter)}
+  .item.owned{background:var(--pc-soft);border-color:var(--pc-line)}
+  .item.owned::before{background:var(--pc)}
+  .who-pill{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:700;color:#fff;background:var(--pc)}
+  .legend{display:flex;flex-wrap:wrap;gap:6px;margin:-4px 0 14px;font-size:12px;color:var(--muted);align-items:center}
   .item.done{opacity:.55} .item.done .t{text-decoration:line-through}
   .t{font-weight:700;margin:0 0 2px}
   .m{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
@@ -151,6 +155,7 @@
       <button class="chip" data-filter="done">Done</button>
       <button class="chip" data-filter="all">All</button>
     </div>
+    <div class="legend" id="legend"></div>
     <div class="list" id="list-actions"></div>
   </section>
 
@@ -306,16 +311,36 @@ function fmtDate(d){if(!d)return"";const x=new Date(d+"T00:00");return x.toLocal
 function isLate(it){return it.kind==="action"&&it.status!=="done"&&it.due_date&&it.due_date<new Date().toISOString().slice(0,10)}
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 function label(kind,st){const f=STATUSES[kind].find(x=>x[0]===st);return f?f[1]:st}
+// Each person's colour: [strong, soft background, border]
+const PEOPLE={
+  akvile:["#B64A74","#FBEAF1","#F0C9D9"],
+  nerys:["#3E8A77","#E4F3ED","#BFE2D5"],
+  zain:["#6C4E8A","#EFE8F6","#D6C8E8"],
+  rhys:["#B87A12","#FCF1D8","#F0D79C"]
+};
+const SPARE=[["#3F7CB0","#E4EEF8","#BFD5EC"],["#C85A32","#FBE7DE","#F0C3AF"],["#5B7F2E","#ECF3E1","#CFE0B5"]];
+function ownerKey(o){return (o||"").split(/[,&/]| and /)[0].trim().toLowerCase()}
+function ownerColour(o){
+  const k=ownerKey(o); if(!k)return null;
+  if(PEOPLE[k])return PEOPLE[k];
+  let h=0; for(const c of k)h=(h*31+c.charCodeAt(0))>>>0; return SPARE[h%SPARE.length];
+}
+function ownerStyle(o){const c=ownerColour(o);return c?`--pc:${c[0]};--pc-soft:${c[1]};--pc-line:${c[2]}`:""}
+function renderLegend(){
+  const names=[...new Set(items.filter(i=>i.kind==="action"&&i.owner).map(i=>ownerKey(i.owner)))].sort();
+  $("#legend").innerHTML=names.length?"Who’s who: "+names.map(k=>`<span class="who-pill" style="${ownerStyle(k)}">${esc(k[0].toUpperCase()+k.slice(1))}</span>`).join(""):"";
+}
 function card(it){
   const bits=[];
+  const col=it.kind==="action"?ownerColour(it.owner):null;
   bits.push(`<span class="tag ${it.status}">${label(it.kind,it.status)}</span>`);
   if(it.kind!=="action"||it.area!=="general") bits.push(`<span>${AREA[it.area]||it.area}</span>`);
-  if(it.owner) bits.push(`<span><b>${esc(it.owner)}</b></span>`);
+  if(it.owner) bits.push(col?`<span class="who-pill">${esc(it.owner)}</span>`:`<span><b>${esc(it.owner)}</b></span>`);
   if(it.due_date) bits.push(`<span class="${isLate(it)?"tag late":""}">${isLate(it)?"Late · ":""}${fmtDate(it.due_date)}</span>`);
   if(it.needs_input) bits.push(`<span class="ask">Needs ${esc(it.needs_input)}</span>`);
   if(it.kind==="post"&&it.format) bits.push(`<span>${esc(it.format)}</span>`);
   const sub=it.kind==="post"&&it.hook?`<div class="help" style="margin:2px 0 4px">“${esc(it.hook)}”</div>`:"";
-  return `<div class="item ${it.area} ${it.status==="done"?"done":""}" onclick="openForm('${it.kind}','${it.id}')" tabindex="0" onkeydown="if(event.key==='Enter')this.click()">
+  return `<div class="item ${it.area} ${col?"owned":""} ${it.status==="done"?"done":""}" style="${col?ownerStyle(it.owner):""}" onclick="openForm('${it.kind}','${it.id}')" tabindex="0" onkeydown="if(event.key==='Enter')this.click()">
     <p class="t">${esc(it.title)}</p>${sub}<div class="m">${bits.join("")}</div></div>`;
 }
 function fill(id,list,emptyText){const el=$(id);el.innerHTML=list.length?list.map(card).join(""):`<div class="empty">${emptyText}</div>`}
@@ -325,6 +350,7 @@ function render(){
     filt.actions==="all"?true:filt.actions==="done"?i.status==="done":filt.actions==="mine"?(i.needs_input||"").toLowerCase().includes(mineKey)&&i.status!=="done":i.status!=="done")
     .sort((x,y)=>(x.due_date||"9")>(y.due_date||"9")?1:-1);
   fill("#list-actions",a,"Nothing here. Add an action to get the ball rolling.");
+  renderLegend();
   fill("#list-people",items.filter(i=>i.area===filt.area),`Nothing tagged ${AREA[filt.area]} yet.`);
   fill("#list-ideas",items.filter(i=>i.kind==="idea"&&(filt.idea==="all"||i.status===filt.idea)),"No ideas yet. Add the first one.");
   const p=items.filter(i=>i.kind==="post"&&(filt.post==="all"||i.status===filt.post));
