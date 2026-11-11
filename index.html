@@ -149,7 +149,7 @@
     <div class="toolbar">
       <button class="btn" onclick="openForm('action')">Add action</button>
       <button class="chip on" data-filter="open">Open</button>
-      <button class="chip" data-filter="mine">Needs my input</button>
+      <button class="chip" data-filter="mine">For me</button>
       <button class="chip" data-filter="done">Done</button>
       <button class="chip" data-filter="all">All</button>
     </div>
@@ -283,12 +283,37 @@ async function gate(){
   const ok=!!me;
   $("#login").hidden=ok; $("#nav").hidden=!ok; $("#blocked").hidden=true;
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",ok&&v.id==="view-"+view));
-  $("#who").innerHTML=ok?`${esc(me.email)}<br><button onclick="setPassword()">Set password</button> · <button onclick="signOut()">Sign out</button>`:"";
+  showWho();
   if(ok){
     const {data}=await sb.from("allowed_emails").select("email").limit(1);
     if(!data||!data.length){$("#blocked").hidden=false;document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$("#nav").hidden=true;return}
     load();
+    if(!(me.user_metadata&&me.user_metadata.name)) setTimeout(()=>changeName(true),400);
   }
+}
+// Who am I? The name each person saved, so "For me" can match tasks by name.
+function myName(){
+  const n=me&&me.user_metadata&&me.user_metadata.name; if(n)return n.trim();
+  const e=(me&&me.email||"").toLowerCase();
+  const guess=Object.keys(PEOPLE).find(k=>e.includes(k));
+  return guess?guess[0].toUpperCase()+guess.slice(1):"";
+}
+function showWho(){
+  if(!me){$("#who").innerHTML="";return}
+  const n=myName();
+  $("#who").innerHTML=`${n?"Hi "+esc(n)+"<br>":""}<span style="font-size:12px">${esc(me.email)}</span><br><button onclick="changeName()">${n?"Change name":"Set my name"}</button> · <button onclick="setPassword()">Set password</button> · <button onclick="signOut()">Sign out</button>`;
+}
+async function changeName(first){
+  const n=prompt(first?"Welcome! What’s your first name? (as it’s written on tasks, e.g. Nerys)":"Your first name, as it’s written on tasks:",myName());
+  if(n===null||!n.trim())return;
+  const {data,error}=await sb.auth.updateUser({data:{name:n.trim()}});
+  if(error){toast("Couldn’t save name: "+error.message);return}
+  me=data.user; showWho(); render(); toast("Thanks, "+n.trim());
+}
+function namesIn(s){return (s||"").toLowerCase().split(/[,&/+]| and /).map(x=>x.trim()).filter(Boolean)}
+function isMine(it){
+  const n=myName().toLowerCase(); if(!n)return false;
+  return namesIn(it.owner).includes(n)||namesIn(it.needs_input).includes(n);
 }
 function loginMsg(t){$("#loginMsg").textContent=t}
 function creds(){
@@ -374,9 +399,8 @@ function card(it){
 }
 function fill(id,list,emptyText){const el=$(id);el.innerHTML=list.length?list.map(card).join(""):`<div class="empty">${emptyText}</div>`}
 function render(){
-  const mineKey=(me&&me.email||"").split("@")[0].toLowerCase();
   const a=items.filter(i=>i.kind==="action").filter(i=>
-    filt.actions==="all"?true:filt.actions==="done"?i.status==="done":filt.actions==="mine"?(i.needs_input||"").toLowerCase().includes(mineKey)&&i.status!=="done":i.status!=="done")
+    filt.actions==="all"?true:filt.actions==="done"?i.status==="done":filt.actions==="mine"?isMine(i)&&i.status!=="done":i.status!=="done")
     .sort((x,y)=>(x.due_date||"9")>(y.due_date||"9")?1:-1);
   fill("#list-actions",a,"Nothing here. Add an action to get the ball rolling.");
   renderLegend();
