@@ -287,28 +287,35 @@ async function gate(){
   if(ok){
     const {data}=await sb.from("allowed_emails").select("email").limit(1);
     if(!data||!data.length){$("#blocked").hidden=false;document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));$("#nav").hidden=true;return}
+    await workOutMyName(); showWho();
     load();
-    if(!(me.user_metadata&&me.user_metadata.name)) setTimeout(()=>changeName(true),400);
   }
 }
-// Who am I? The name each person saved, so "For me" can match tasks by name.
-function myName(){
-  const n=me&&me.user_metadata&&me.user_metadata.name; if(n)return n.trim();
-  const e=(me&&me.email||"").toLowerCase();
-  const guess=Object.keys(PEOPLE).find(k=>e.includes(k));
-  return guess?guess[0].toUpperCase()+guess.slice(1):"";
+// Who am I? Each team email is linked to a name, so "For me" can match tasks.
+// Emails are stored scrambled (SHA-256) because this code is public.
+// To add someone: ask Claude, or put sha256(lowercase email) and their name here.
+const EMAIL_NAMES={
+  "0e1e4e7a209b966e84109bb070ce810c819bde39453c8ea783eb256e3d4bbaf6":"Nerys",
+  "25f56f18404443fa16581165d91a8cef73154110f4ddfcebe5234f2f37a4e4af":"Zain",
+  "a5383f1345640c523d152124abee1b7e3832de0e63ab14b98d31a8a145bc8f69":"Rhys"
+};
+let myNameCache="";
+async function workOutMyName(){
+  const e=(me&&me.email||"").trim().toLowerCase(); myNameCache="";
+  if(!e)return;
+  try{
+    const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(e));
+    const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,"0")).join("");
+    if(EMAIL_NAMES[hex]){myNameCache=EMAIL_NAMES[hex];return}
+  }catch(_){}
+  const guess=Object.keys(PEOPLE).find(k=>e.includes(k)); // e.g. an email containing "akvile"
+  if(guess)myNameCache=guess[0].toUpperCase()+guess.slice(1);
 }
+function myName(){return myNameCache}
 function showWho(){
   if(!me){$("#who").innerHTML="";return}
   const n=myName();
-  $("#who").innerHTML=`${n?"Hi "+esc(n)+"<br>":""}<span style="font-size:12px">${esc(me.email)}</span><br><button onclick="changeName()">${n?"Change name":"Set my name"}</button> · <button onclick="setPassword()">Set password</button> · <button onclick="signOut()">Sign out</button>`;
-}
-async function changeName(first){
-  const n=prompt(first?"Welcome! What’s your first name? (as it’s written on tasks, e.g. Nerys)":"Your first name, as it’s written on tasks:",myName());
-  if(n===null||!n.trim())return;
-  const {data,error}=await sb.auth.updateUser({data:{name:n.trim()}});
-  if(error){toast("Couldn’t save name: "+error.message);return}
-  me=data.user; showWho(); render(); toast("Thanks, "+n.trim());
+  $("#who").innerHTML=`${n?"Hi "+esc(n)+"<br>":""}<span style="font-size:12px">${esc(me.email)}</span><br><button onclick="setPassword()">Set password</button> · <button onclick="signOut()">Sign out</button>`;
 }
 function namesIn(s){return (s||"").toLowerCase().split(/[,&/+]| and /).map(x=>x.trim()).filter(Boolean)}
 function isMine(it){
