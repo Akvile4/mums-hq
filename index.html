@@ -69,7 +69,38 @@
   .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:600;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9}
   .toast.show{opacity:1}
   .help{font-size:12px;color:var(--muted);font-weight:400}
-  @media (prefers-reduced-motion:reduce){.toast{transition:none}}
+  .starter{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  /* money timeline */
+  .moneyHead{background:linear-gradient(135deg,var(--butter-soft),var(--rasp-soft));border-radius:18px;padding:16px 18px;margin:0 0 18px}
+  .moneyHead h2{font-family:var(--font-head);font-weight:600;font-size:24px;margin:0 0 4px}
+  .moneyHead p{margin:0;font-size:14px;color:var(--ink)}
+  .bar{height:12px;background:var(--card);border-radius:999px;margin:12px 0 4px;overflow:hidden;border:1px solid var(--line)}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mint),var(--butter),var(--rasp));border-radius:999px;transition:width .4s}
+  .barLbl{font-size:12px;font-weight:700;color:var(--muted)}
+  .path{position:relative;padding-left:58px}
+  .path::before{content:"";position:absolute;left:25px;top:20px;bottom:20px;border-left:4px dotted var(--line)}
+  .stage{position:relative;margin:0 0 18px;cursor:pointer}
+  .stage .dot{position:absolute;left:-58px;top:6px;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:26px;background:var(--card);border:3px solid var(--line);z-index:1}
+  .stage .scard{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px 16px;position:relative}
+  .stage:nth-child(5n+1) .dot{border-color:var(--mint);background:var(--mint-soft)}
+  .stage:nth-child(5n+2) .dot{border-color:var(--butter);background:var(--butter-soft)}
+  .stage:nth-child(5n+3) .dot{border-color:var(--rasp);background:var(--rasp-soft)}
+  .stage:nth-child(5n+4) .dot{border-color:var(--plum);background:var(--plum-soft)}
+  .stage:nth-child(5n+5) .dot{border-color:var(--ink);background:var(--paper)}
+  .stage.now .scard{border:2px solid var(--rasp);box-shadow:0 6px 18px rgba(182,74,116,.15)}
+  .stage.done .scard{opacity:.7}
+  .stage.done .dot::after{content:"✓";position:absolute;right:-4px;bottom:-4px;width:22px;height:22px;border-radius:50%;background:var(--mint);color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center}
+  .when{font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  .stage h3{font-family:var(--font-head);font-weight:600;font-size:21px;margin:2px 0 8px}
+  .here{position:absolute;top:-11px;right:12px;background:var(--rasp);color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;transform:rotate(3deg)}
+  .goal{background:var(--butter-soft);border-radius:10px;padding:8px 10px;font-size:14px;font-weight:600;margin:0 0 10px}
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px}
+  .cols b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px}
+  .cols ul{margin:0;padding-left:18px} .cols li{margin:0 0 3px} .cols p{margin:0;white-space:pre-line}
+  @media(max-width:520px){.cols{grid-template-columns:1fr}}
+  .reality{border:1.5px dashed var(--plum);border-radius:16px;padding:14px 16px;font-size:14px;background:var(--plum-soft)}
+  .reality b{font-family:var(--font-head);font-size:17px;display:block;margin-bottom:2px}
+  @media (prefers-reduced-motion:reduce){.toast{transition:none}.bar i{transition:none}}
 </style>
 </head>
 <body>
@@ -83,6 +114,7 @@
   <button data-view="people"><span class="ic">♡</span>Mum &amp; Dad</button>
   <button data-view="ideas"><span class="ic">✦</span>Ideas</button>
   <button data-view="posts"><span class="ic">▣</span>Posts</button>
+  <button data-view="money"><span class="ic">£</span>Money</button>
 </nav>
 
 <main>
@@ -107,6 +139,10 @@
   </section>
 
   <section class="view" id="view-actions">
+    <div class="note starter" id="starter" hidden>
+      <span>Add our ideas, first actions, Instagram posts and money plan. Everything can be edited or deleted afterwards.</span>
+      <button class="btn small" onclick="seedAll()">Add our starter plan</button>
+    </div>
     <p class="intro">Things to do, who’s on it, and by when. Tap one to edit.</p>
     <div class="toolbar">
       <button class="btn" onclick="openForm('action')">Add action</button>
@@ -145,7 +181,7 @@
     <p class="intro">Our Instagram plan. Each post: the hook, what’s in it, the format, and where it’s up to.</p>
     <div class="toolbar">
       <button class="btn" onclick="openForm('post')">Add post</button>
-      <button class="btn ghost" id="seedBtn" onclick="seed()" hidden>Add starter list</button>
+      <button class="btn ghost" id="seedBtn" onclick="seedAll(['post'])" hidden>Add starter list</button>
       <button class="chip on" data-pstatus="all">All</button>
       <button class="chip" data-pstatus="idea">Idea</button>
       <button class="chip" data-pstatus="drafting">Drafting</button>
@@ -153,6 +189,24 @@
       <button class="chip" data-pstatus="posted">Posted</button>
     </div>
     <div class="list" id="list-posts"></div>
+  </section>
+
+  <section class="view" id="view-money">
+    <div class="moneyHead">
+      <h2>From free help to a real thing</h2>
+      <p>Our road to making this pay, one stage at a time. Tap a stage to edit it or mark where we are.</p>
+      <div class="bar"><i id="moneyBar" style="width:0"></i></div>
+      <div class="barLbl" id="moneyLbl"></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" onclick="openForm('stage')">Add stage</button>
+      <button class="btn ghost" id="seedMoney" onclick="seedAll(['stage'])" hidden>Add our money plan</button>
+    </div>
+    <div class="path" id="list-money"></div>
+    <div class="reality">
+      <b>Reality check 💛</b>
+      Most projects like this earn little or nothing in year one. That’s normal. Year one is about trust: if mums save, share and message us, we’re on the right road.
+    </div>
   </section>
 </main>
 
@@ -179,7 +233,12 @@
         <option value="">Choose</option><option>Carousel</option><option>Single image</option><option>Reel</option><option>Story</option><option>Printable</option>
       </select></label>
     </div>
-    <label>Notes<textarea id="f-notes"></textarea></label>
+    <div id="stageFields" style="display:flex;flex-direction:column;gap:12px">
+      <label>When<input id="f-when" placeholder="Months 1–6"></label>
+      <label>Goal for this stage<input id="f-goal" placeholder="First £100 made"></label>
+      <label>Examples (one per line)<textarea id="f-examples"></textarea></label>
+    </div>
+    <label><span id="notesLbl">Notes</span><textarea id="f-notes"></textarea></label>
     <div class="actions">
       <button type="button" class="danger" id="deleteBtn" onclick="removeItem()">Delete</button>
       <span>
@@ -200,8 +259,10 @@ const SUPABASE_KEY = "sb_publishable_COdORgMfcNh0OAJ-_RBY3w_XvUjU-_X";
 const STATUSES = {
   action:[["todo","To do"],["doing","Doing"],["done","Done"]],
   idea:[["new","New"],["keep","Keep"],["parked","Parked"]],
-  post:[["idea","Idea"],["drafting","Drafting"],["ready","Ready"],["posted","Posted"]]
+  post:[["idea","Idea"],["drafting","Drafting"],["ready","Ready"],["posted","Posted"]],
+  stage:[["later","Later"],["now","We’re here"],["done","Done"]]
 };
+const STAGE_EMOJI=["🌱","🧺","🤝","🏛️","📱","⭐","🚀","🌈"];
 const AREA = {mum:"Mum",dad:"Dad",relationship:"Relationship",general:"General"};
 let sb=null, me=null, items=[], view="actions";
 let filt={actions:"open",area:"mum",idea:"all",post:"all"};
@@ -269,6 +330,31 @@ function render(){
   const p=items.filter(i=>i.kind==="post"&&(filt.post==="all"||i.status===filt.post));
   fill("#list-posts",p,"No posts planned yet. Add one, or add the starter list.");
   $("#seedBtn").hidden=items.some(i=>i.kind==="post");
+  renderMoney();
+  $("#starter").hidden=missingKinds().length===0;
+}
+function renderMoney(){
+  const st=items.filter(i=>i.kind==="stage");
+  $("#seedMoney").hidden=st.length>0;
+  const done=st.filter(s=>s.status==="done").length, nowIdx=st.findIndex(s=>s.status==="now");
+  const pct=st.length?Math.round(((done+(nowIdx>=0?0.5:0))/st.length)*100):0;
+  $("#moneyBar").style.width=pct+"%";
+  $("#moneyLbl").textContent=st.length?(nowIdx>=0?`Stage ${nowIdx+1} of ${st.length}: ${st[nowIdx].title}`:`${done} of ${st.length} stages done`):"";
+  if(!st.length){$("#list-money").innerHTML=`<div class="empty">No stages yet. Add our money plan to start.</div>`;return}
+  $("#list-money").innerHTML=st.map((s,i)=>{
+    const ex=(s.includes||"").split("\n").map(x=>x.trim()).filter(Boolean).map(x=>`<li>${esc(x)}</li>`).join("");
+    return `<div class="stage ${s.status}" onclick="openForm('stage','${s.id}')" tabindex="0" onkeydown="if(event.key==='Enter')this.click()">
+      <div class="dot">${STAGE_EMOJI[i%STAGE_EMOJI.length]}</div>
+      <div class="scard">${s.status==="now"?'<span class="here">We’re here!</span>':""}
+        <div class="when">${esc(s.format)}</div>
+        <h3>${esc(s.title)}</h3>
+        ${s.hook?`<div class="goal">🎯 ${esc(s.hook)}</div>`:""}
+        <div class="cols">
+          <div><b>Examples</b>${ex?`<ul>${ex}</ul>`:"<p>Add some</p>"}</div>
+          <div><b>What matters</b><p>${esc(s.notes)||"Add notes"}</p></div>
+        </div>
+      </div></div>`;
+  }).join("");
 }
 
 // navigation + filters
@@ -291,9 +377,14 @@ function openForm(kind,id){
   $("#f-owner").value=it?it.owner||"":""; $("#f-due").value=it?it.due_date||"":"";
   $("#f-needs").value=it?it.needs_input||"":""; $("#f-notes").value=it?it.notes||"":"";
   $("#f-hook").value=it?it.hook||"":""; $("#f-includes").value=it?it.includes||"":""; $("#f-format").value=it?it.format||"":"";
+  $("#f-when").value=it?it.format||"":""; $("#f-goal").value=it?it.hook||"":""; $("#f-examples").value=it?it.includes||"":"";
+  $("#formTitle").textContent=(it?"Edit ":"Add ")+(kind==="stage"?"money stage":kind);
   $("#actionFields").style.display=kind==="action"?"grid":"none";
-  $("#inputField").style.display=kind==="idea"?"none":"flex";
+  $("#inputField").style.display=(kind==="idea"||kind==="stage")?"none":"flex";
   $("#postFields").style.display=kind==="post"?"flex":"none";
+  $("#stageFields").style.display=kind==="stage"?"flex":"none";
+  $("#f-area").parentElement.style.display=kind==="stage"?"none":"flex";
+  $("#notesLbl").textContent=kind==="stage"?"What matters":"Notes";
   $("#deleteBtn").style.visibility=it?"visible":"hidden";
   dlg.showModal(); $("#f-title").focus();
 }
@@ -305,6 +396,11 @@ $("#form").onsubmit=async e=>{
     notes:$("#f-notes").value.trim(),hook:$("#f-hook").value.trim(),includes:$("#f-includes").value.trim(),format:$("#f-format").value,
     updated_at:new Date().toISOString()};
   if(!row.title)return;
+  if(kind==="stage"){row.format=$("#f-when").value.trim();row.hook=$("#f-goal").value.trim();row.includes=$("#f-examples").value.trim();row.area="general"}
+  if(kind==="stage"&&row.status==="now"){
+    const others=items.filter(i=>i.kind==="stage"&&i.status==="now"&&i.id!==id).map(i=>i.id);
+    if(others.length) await sb.from("items").update({status:"later"}).in("id",others);
+  }
   let res;
   if(id) res=await sb.from("items").update(row).eq("id",id);
   else res=await sb.from("items").insert({...row,created_by:me.email});
@@ -318,26 +414,77 @@ async function removeItem(){
   dlg.close(); toast("Deleted"); load();
 }
 
-// starter Instagram list
-async function seed(){
-  const posts=[
-    ["Where to get help (and it’s okay to ask)","You don’t have to do this alone","GP, health visitor, 111, perinatal mental health team, PANDAS, Mind. When to use which.","Carousel","mum"],
-    ["Is this poo colour normal?","Green? Black? Seedy? Here’s what it means","Colour chart, what’s normal by age, when to call someone.","Carousel","general"],
-    ["Postnatal bleeding: what to expect","Still bleeding at week 3? Probably normal","Weeks 1 to 6 timeline, what’s too much, when to call.","Carousel","mum"],
-    ["Why your hair is falling out","It’s not just you","What causes it, when it stops, what helps.","Single image","mum"],
-    ["Fever in babies: when to worry","Under 3 months with a temperature? Call","Temperatures by age, red flags, 111 vs A&E.","Carousel","general"],
-    ["How to ask for help: 5 scripts","Copy and paste these","Ready-made messages for partners, family, friends.","Carousel","relationship"],
-    ["Dads matter too","Partners get low after a baby as well","Signs to watch, where dads can get support.","Carousel","dad"],
-    ["Your relationship after a baby","Nobody warned us about this bit","Common strains, small habits that help, where to get support.","Carousel","relationship"],
-    ["Mum-buster: ‘Good mums enjoy every moment’","Nope","Reality-check one guilt-trip myth each week.","Reel","mum"],
-    ["Still you: 10 minutes that are yours","You are a mum. You are still you","Tiny ways to get a bit of yourself back.","Single image","mum"],
-    ["Matrescence: becoming a mother changes your brain","It’s a real thing with a real name","What changes, why you push people away, why it’s normal.","Carousel","mum"],
-    ["Free dental care while pregnant and after","Yes, really, use it","Why teeth are more fragile, how to claim it.","Single image","mum"]
-  ];
-  const rows=posts.map(([title,hook,includes,format,area])=>({kind:"post",title,hook,includes,format,area,status:"idea",created_by:me.email}));
+// ---------- Starter plan (only adds what's missing; all editable afterwards) ----------
+function missingKinds(){return ["action","idea","post","stage"].filter(k=>!items.some(i=>i.kind===k))}
+const STARTER={
+  action:[
+    {title:"Check NMC social media guidance",owner:"Nerys",due_date:"2026-11-25",notes:"Read the NMC guidance on social media and check the NHS contract for anything about public advice or side work.",area:"general"},
+    {title:"Look at what already exists",owner:"Akvile",due_date:"2026-11-25",notes:"Follow 10 similar accounts and apps. Note what they do well and what’s missing (dads, other languages, no-guilt tone).",area:"general"},
+    {title:"Pick a name",owner:"Zain",needs_input:"Akvile, Nerys",due_date:"2026-11-30",notes:"Check the Instagram handle and web address are free before deciding.",area:"general"},
+    {title:"Design one cheat-sheet template",owner:"Zain",needs_input:"Nerys",due_date:"2026-12-07",notes:"Colourful, readable on a phone, room for a ‘when to call’ box.",area:"general"},
+    {title:"Gather 5–10 test mums",owner:"Akvile",due_date:"2026-12-07",notes:"Friends with babies who see posts before they go out and say if they helped.",area:"mum"},
+    {title:"Set up the Instagram account",owner:"Akvile",needs_input:"Zain",due_date:"2026-12-14",notes:"After the name is chosen. Bio, profile picture, highlight covers.",area:"general"},
+    {title:"Make and post the first 3 cheat sheets",owner:"Nerys",needs_input:"Akvile, Zain",due_date:"2027-01-10",notes:"Start with: where to get help, poo colours, postnatal bleeding.",area:"general"},
+    {title:"Find out about setting up a CIC",owner:"Rhys",due_date:"2027-01-31",notes:"Costs, what’s needed, whether it helps with grants. No rush.",area:"general"},
+    {title:"Book our next meeting",owner:"Akvile",due_date:"2026-11-20",notes:"",area:"general"}
+  ],
+  idea:[
+    {title:"One app for every stage",area:"general",status:"keep",notes:"Free app that grows with baby: pregnancy log, contraction timer, first 3 months, milestones, teething, and a ‘my baby is 15 months, what now?’ quick look. Replaces the pile of paid apps. Later, once we have an audience."},
+    {title:"A cute mascot",area:"general",notes:"Friendly character for the cheat sheets and app. Animal, object or character? Name? Calm, funny or wise?"},
+    {title:"Lithuanian and Welsh content",area:"general",status:"keep",notes:"English mum content is crowded. Lithuanian for mums in the UK, and Welsh, are almost empty. A niche we can own quickly."},
+    {title:"Test mums group",area:"mum",notes:"5–10 mums who see every post first and say if it helped. Free feedback, and later our first reviews."},
+    {title:"‘Ask a midwife’ weekly story",area:"mum",notes:"Nerys answers one anonymous question a week. General guidance only, never advice for one person."},
+    {title:"Printable fridge sheet",area:"mum",notes:"Who to call, for what, with numbers. Mums stick it on the fridge and every visitor sees our name."},
+    {title:"Partner with places mums already go",area:"general",notes:"Baby classes, libraries, GP waiting rooms, health visitors. A good free leaflet gets handed out."},
+    {title:"Wins list",area:"general",notes:"Save every message from a mum who says it helped. Keeps us going and is gold for grant applications."},
+    {title:"Set up as a CIC",area:"general",status:"parked",notes:"Community Interest Company: cheap, keeps it separate from our own money, and funders prefer it."},
+    {title:"Dads’ corner",area:"dad",notes:"Partners get low too. Signs to watch, how to help, where dads get support."},
+    {title:"Relationship after baby",area:"relationship",notes:"Common strains, small habits that help, how to share the load."},
+    {title:"‘Still you’ series",area:"mum",notes:"Getting yourself back: time, hobbies, ambition. From Akvile’s own story."},
+    {title:"Mum-busters (anti-guilt)",area:"mum",notes:"Reality-check one ‘perfect mum’ myth a week. Message: you know your baby best, trust your gut."}
+  ],
+  post:[
+    {title:"Where to get help (and it’s okay to ask)",hook:"You don’t have to do this alone",includes:"GP, health visitor, 111, perinatal mental health team, PANDAS, Mind. When to use which.",format:"Carousel",area:"mum"},
+    {title:"Is this poo colour normal?",hook:"Green? Black? Seedy? Here’s what it means",includes:"Colour chart, what’s normal by age, when to call someone.",format:"Carousel",area:"general"},
+    {title:"Postnatal bleeding: what to expect",hook:"Still bleeding at week 3? Probably normal",includes:"Weeks 1 to 6 timeline, what’s too much, when to call.",format:"Carousel",area:"mum"},
+    {title:"Why your hair is falling out",hook:"It’s not just you",includes:"What causes it, when it stops, what helps.",format:"Single image",area:"mum"},
+    {title:"Fever in babies: when to worry",hook:"Under 3 months with a temperature? Call",includes:"Temperatures by age, red flags, 111 vs A&E.",format:"Carousel",area:"general"},
+    {title:"How to ask for help: 5 scripts",hook:"Copy and paste these",includes:"Ready-made messages for partners, family, friends.",format:"Carousel",area:"relationship"},
+    {title:"Dads matter too",hook:"Partners get low after a baby as well",includes:"Signs to watch, where dads can get support.",format:"Carousel",area:"dad"},
+    {title:"Your relationship after a baby",hook:"Nobody warned us about this bit",includes:"Common strains, small habits that help, where to get support.",format:"Carousel",area:"relationship"},
+    {title:"Mum-buster: ‘Good mums enjoy every moment’",hook:"Nope",includes:"Reality-check one guilt-trip myth each week.",format:"Reel",area:"mum"},
+    {title:"Still you: 10 minutes that are yours",hook:"You are a mum. You are still you",includes:"Tiny ways to get a bit of yourself back.",format:"Single image",area:"mum"},
+    {title:"Matrescence: becoming a mother changes you",hook:"It’s a real thing with a real name",includes:"What changes, why it feels so big, why it’s normal.",format:"Carousel",area:"mum"},
+    {title:"Free dental care while pregnant and after",hook:"Yes, really, use it",includes:"Why teeth need extra care, how to claim it.",format:"Single image",area:"mum"}
+  ],
+  stage:[
+    {title:"Build trust",format:"Months 1–6",status:"now",hook:"1,000 followers who save and share our posts",
+     includes:"Free cheat sheets on Instagram\nWeekly ‘Ask a midwife’ story\nPrintable fridge sheet\nTest mums give feedback",
+     notes:"Nerys’s NMC check comes first.\nPost regularly rather than perfectly.\nWatch which posts get saved: that’s what mums want."},
+    {title:"First small products",format:"Months 6–12",status:"later",hook:"Our first £100 made",
+     includes:"Printable cheat-sheet pack (£5–15)\nMini e-book\n‘Your first 12 weeks’ short course",
+     notes:"Only sell what followers keep asking for.\nDigital only: no stock, no shipping."},
+    {title:"Partners",format:"Year 1–2",status:"later",hook:"First paid partnership that fits our values",
+     includes:"Sponsored posts\nAffiliate links\nWorkshops with baby classes\nTalks for local groups",
+     notes:"Say no to anything that makes mums feel guilty.\nAlways label ads clearly.\nOne bad sponsor undoes years of trust."},
+    {title:"Grants and community",format:"Year 2+",status:"later",hook:"Our first grant",
+     includes:"National Lottery Community Fund\nCouncil perinatal grants (£5k–10k)\nSet up as a CIC\nRun peer support groups",
+     notes:"Keep the wins list: funders want proof we help.\nLived experience is exactly what funders look for."},
+    {title:"The app",format:"Year 2–3",status:"later",hook:"Free app with an optional paid extra",
+     includes:"Free: tracker and ‘quick look by age’\nPaid: courses, Ask a midwife, Lithuanian and Welsh packs",
+     notes:"Only build it once our audience asks for it.\nNerys checks every health fact."}
+  ]
+};
+async function seedAll(kinds){
+  kinds=(kinds||missingKinds()).filter(k=>!items.some(i=>i.kind===k));
+  if(!kinds.length){toast("Already added");return}
+  const base=Date.now(); let n=0;
+  const defaults={action:"todo",idea:"new",post:"idea",stage:"later"};
+  const rows=[];
+  kinds.forEach(k=>STARTER[k].forEach(r=>rows.push({kind:k,status:defaults[k],area:"general",...r,created_by:me.email,created_at:new Date(base+(n++)*1000).toISOString()})));
   const {error}=await sb.from("items").insert(rows);
   if(error){toast("Couldn’t add: "+error.message);return}
-  toast("Starter list added"); load();
+  toast("Starter plan added"); load();
 }
 init();
 </script>
